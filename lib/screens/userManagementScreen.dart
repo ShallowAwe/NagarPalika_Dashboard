@@ -3,8 +3,8 @@ import 'package:smart_nagarpalika_dashboard/data/dummyuser.dart';
 import 'package:smart_nagarpalika_dashboard/model/userModel.dart';
 import 'package:smart_nagarpalika_dashboard/utils/button.dart';
 import 'package:smart_nagarpalika_dashboard/utils/searchBar.dart';
-import 'package:smart_nagarpalika_dashboard/widgets/userTable/user_table.dart';
-// import 'package:smart_nagarpalika_dashboard/widgets/userTable.dart';
+// import 'package:smart_nagarpalika_dashboard/widgets/userTable/user_table.dart';
+import 'package:smart_nagarpalika_dashboard/widgets/userTable.dart';
 
 
 class Usermanagementscreen extends StatelessWidget {
