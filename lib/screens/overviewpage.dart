@@ -88,7 +88,8 @@ class _OverviewpageState extends State<Overviewpage>
   Widget build(BuildContext context) {
     return Scaffold(
       
-      backgroundColor: const Color.fromARGB(255, 218, 219, 219),
+      backgroundColor: Color(0xFFECF6FE),
+
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -311,7 +312,7 @@ class _OverviewpageState extends State<Overviewpage>
           child: Transform.translate(
             offset: Offset(0, 30 * (1 - value)),
             child: Opacity(
-              opacity: value,
+              opacity: value.clamp(0.0, 1.0),
               child: card,
             ),
           ),

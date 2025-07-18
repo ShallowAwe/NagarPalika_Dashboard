@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:smart_nagarpalika_dashboard/overviewpage.dart';
-import 'package:smart_nagarpalika_dashboard/screens/userManagementScreen.dart';
+import 'package:smart_nagarpalika_dashboard/screens/overviewpage.dart';
+import 'package:smart_nagarpalika_dashboard/screens/user_management_page.dart';
 import 'package:smart_nagarpalika_dashboard/utils/sideBar.dart';
 
 void main() => runApp(AdminDashboardApp());

@@ -54,7 +54,7 @@ class Sidebar extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withAlpha(25),
             blurRadius: 10,
             offset: const Offset(2, 0),
           ),
@@ -128,7 +128,7 @@ class SidebarHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withAlpha(50),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -154,7 +154,7 @@ class SidebarHeader extends StatelessWidget {
                   Text(
                     "Management System",
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
+                      color: Colors.white.withAlpha(204),
                       fontSize: 12,
                     ),
                   ),
