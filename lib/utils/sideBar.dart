@@ -16,6 +16,7 @@ class SidebarItem {
 }
 
 class Sidebar extends StatelessWidget {
+  final String username;
   final int selectedIndex;
   final Function(int)? onItemSelected;
   final bool isExpanded;
@@ -23,6 +24,7 @@ class Sidebar extends StatelessWidget {
 
   const Sidebar({
     super.key,
+    required this.username,
     required this.selectedIndex,
     this.onItemSelected,
     this.isExpanded = true,
@@ -35,6 +37,8 @@ class Sidebar extends StatelessWidget {
     SidebarItem(icon: Icons.people_rounded, label: "Users", index: 1),
     SidebarItem(icon: Icons.report_rounded, label: "Complaints", index: 2),
     SidebarItem(icon: Icons.work_rounded, label: "Employees", index: 3),
+    SidebarItem(icon: Icons.settings_rounded, label: "Departments", index: 4),
+    SidebarItem(icon: Icons.notifications_active, label: "Alerts", index: 5),
   ];
 
   @override
@@ -47,10 +51,7 @@ class Sidebar extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Colors.white,
-            Colors.blue.shade50,
-          ],
+          colors: [Colors.white, Colors.blue.shade50],
         ),
         boxShadow: [
           BoxShadow(
@@ -60,18 +61,12 @@ class Sidebar extends StatelessWidget {
           ),
         ],
         border: Border(
-          right: BorderSide(
-            color: Colors.grey.shade200,
-            width: 1,
-          ),
+          right: BorderSide(color: Colors.grey.shade200, width: 1),
         ),
       ),
       child: Column(
         children: [
-          SidebarHeader(
-            isExpanded: isExpanded,
-            onToggle: onToggle,
-          ),
+          SidebarHeader(isExpanded: isExpanded, onToggle: onToggle),
           const SizedBox(height: 20),
           Expanded(
             child: ListView.builder(
@@ -91,7 +86,7 @@ class Sidebar extends StatelessWidget {
               },
             ),
           ),
-          SidebarFooter(isExpanded: isExpanded),
+          SidebarFooter(isExpanded: isExpanded, username: username),
         ],
       ),
     );
@@ -103,11 +98,7 @@ class SidebarHeader extends StatelessWidget {
   final bool isExpanded;
   final VoidCallback? onToggle;
 
-  const SidebarHeader({
-    super.key,
-    required this.isExpanded,
-    this.onToggle,
-  });
+  const SidebarHeader({super.key, required this.isExpanded, this.onToggle});
 
   @override
   Widget build(BuildContext context) {
@@ -117,10 +108,7 @@ class SidebarHeader extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Colors.blue.shade600,
-            Colors.blue.shade800,
-          ],
+          colors: [Colors.blue.shade600, Colors.blue.shade800],
         ),
       ),
       child: Row(
@@ -208,13 +196,9 @@ class _SidebarNavItemState extends State<SidebarNavItem>
       duration: const Duration(milliseconds: 200),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.05,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
   }
 
   @override
@@ -246,21 +230,15 @@ class _SidebarNavItemState extends State<SidebarNavItem>
                     ? LinearGradient(
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
-                        colors: [
-                          Colors.blue.shade600,
-                          Colors.blue.shade500,
-                        ],
+                        colors: [Colors.blue.shade600, Colors.blue.shade500],
                       )
                     : _isHovered
-                        ? LinearGradient(
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                            colors: [
-                              Colors.blue.shade100,
-                              Colors.blue.shade50,
-                            ],
-                          )
-                        : null,
+                    ? LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [Colors.blue.shade100, Colors.blue.shade50],
+                      )
+                    : null,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: widget.isSelected
                     ? [
@@ -297,8 +275,8 @@ class _SidebarNavItemState extends State<SidebarNavItem>
                             color: widget.isSelected
                                 ? Colors.white
                                 : _isHovered
-                                    ? Colors.blue.shade700
-                                    : Colors.grey.shade700,
+                                ? Colors.blue.shade700
+                                : Colors.grey.shade700,
                             size: 24,
                           ),
                         ),
@@ -311,8 +289,8 @@ class _SidebarNavItemState extends State<SidebarNavItem>
                                 color: widget.isSelected
                                     ? Colors.white
                                     : _isHovered
-                                        ? Colors.blue.shade700
-                                        : Colors.grey.shade800,
+                                    ? Colors.blue.shade700
+                                    : Colors.grey.shade800,
                                 fontSize: 16,
                                 fontWeight: widget.isSelected
                                     ? FontWeight.w600
@@ -346,10 +324,12 @@ class _SidebarNavItemState extends State<SidebarNavItem>
 // Sidebar Footer Component
 class SidebarFooter extends StatelessWidget {
   final bool isExpanded;
+  final String username;
 
   const SidebarFooter({
     super.key,
     required this.isExpanded,
+    required this.username,
   });
 
   @override
@@ -357,23 +337,14 @@ class SidebarFooter extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(
-            color: Colors.grey.shade200,
-            width: 1,
-          ),
-        ),
+        border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 20,
             backgroundColor: Colors.blue.shade100,
-            child: Icon(
-              Icons.person,
-              color: Colors.blue.shade700,
-              size: 24,
-            ),
+            child: Icon(Icons.person, color: Colors.blue.shade700, size: 24),
           ),
           if (isExpanded) ...[
             const SizedBox(width: 12),
@@ -382,7 +353,7 @@ class SidebarFooter extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Admin User",
+                    username,
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -418,7 +389,8 @@ class SidebarFooter extends StatelessWidget {
 
 // Usage Example
 class SidebarExample extends StatefulWidget {
-  const SidebarExample({super.key});
+  final String username;
+  const SidebarExample({super.key, required this.username});
 
   @override
   State<SidebarExample> createState() => _SidebarExampleState();
@@ -434,6 +406,7 @@ class _SidebarExampleState extends State<SidebarExample> {
       body: Row(
         children: [
           Sidebar(
+            username: widget.username,
             selectedIndex: selectedIndex,
             isExpanded: isExpanded,
             onItemSelected: (index) {

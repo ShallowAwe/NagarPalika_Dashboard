@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 import 'package:smart_nagarpalika_dashboard/utils/barcharItems.dart';
@@ -25,11 +24,39 @@ class _DashboardGraphState extends State<DashboardGraph> {
         children: [
           Expanded(
             child: ComplaintsBarChart(
-              data: const [
-                BarChartItem(category: 'Water', value: 10, color: Colors.blue),
-                BarChartItem(category: 'Road', value: 15, color: Color.fromARGB(255, 81, 178, 85)),
-                BarChartItem(category: 'Light', value: 5, color: Colors.orange),
-                BarChartItem(category: 'Other', value: 8, color: Colors.purple),
+              data: [
+                BarChartItem(
+                  category: 'Water',
+                  value: 10,
+                  color: Colors.blue,
+                  totalComplaints: 20,
+                  pendingComplaints: 5,
+                  resolvedComplaints: 15,
+                ),
+                BarChartItem(
+                  category: 'Road',
+                  value: 15,
+                  color: Colors.amber,
+                  totalComplaints: 10,
+                  pendingComplaints: 5,
+                  resolvedComplaints: 5,
+                ),
+                BarChartItem(
+                  category: 'Light',
+                  value: 5,
+                  color: Colors.yellowAccent,
+                  totalComplaints: 15,
+                  pendingComplaints: 10,
+                  resolvedComplaints: 5,
+                ),
+                BarChartItem(
+                  category: 'Other',
+                  value: 8,
+                  color: Colors.purple,
+                  totalComplaints: 20,
+                  pendingComplaints: 10,
+                  resolvedComplaints: 10,
+                ),
               ],
             ),
           ),
@@ -37,8 +64,18 @@ class _DashboardGraphState extends State<DashboardGraph> {
           Expanded(
             child: StatusPieChart(
               data: const [
-                PieChartItem(label: 'Resolved', value: 70, count: 28, color: Colors.green),
-                PieChartItem(label: 'Pending', value: 30, count: 12, color: Colors.red),
+                PieChartItem(
+                  label: 'Resolved',
+                  value: 70,
+                  count: 28,
+                  color: Colors.green,
+                ),
+                PieChartItem(
+                  label: 'Pending',
+                  value: 30,
+                  count: 12,
+                  color: Colors.red,
+                ),
               ],
               currentMonth: currentMonth,
             ),

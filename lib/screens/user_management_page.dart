@@ -15,6 +15,7 @@ class Usermanagementscreen extends StatelessWidget {
     List<UserModel> users = dummyUsers; // This should be replaced with actual user data
 
     return Scaffold(
+      backgroundColor: Color(0xFFECF6FE),
     body: Column( 
       children: [
         Padding(

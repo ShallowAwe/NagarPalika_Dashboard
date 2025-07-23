@@ -31,8 +31,31 @@
 
   <title>smart_nagarpalika_dashboard</title>
   <link rel="manifest" href="manifest.json">
+  
+  <!-- Preload Material Icons font -->
+  <link rel="preload" href="fonts/MaterialIcons-Regular.ttf" as="font" type="font/ttf" crossorigin="anonymous">
+  
+  <!-- Preload Cupertino Icons font -->
+  <link rel="preload" href="packages/cupertino_icons/assets/CupertinoIcons.ttf" as="font" type="font/ttf" crossorigin="anonymous">
+  
+  <style>
+    @font-face {
+      font-family: 'MaterialIcons';
+      src: url('fonts/MaterialIcons-Regular.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'CupertinoIcons';
+      src: url('packages/cupertino_icons/assets/CupertinoIcons.ttf') format('truetype');
+    }
+  </style>
 </head>
 <body>
+  <script>
+    // Prevent FOUC (Flash of unstyled content)
+    window.addEventListener('load', function() {
+      document.body.style.visibility = 'visible';
+    });
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
