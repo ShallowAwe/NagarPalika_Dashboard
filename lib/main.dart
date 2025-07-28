@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_nagarpalika_dashboard/screens/complaint_management_page.dart';
 import 'package:smart_nagarpalika_dashboard/screens/employee_management_page.dart';
+// import 'package:smart_nagarpalika_dashboard/screens/employee_management_page.dart';
 import 'package:smart_nagarpalika_dashboard/screens/login_page.dart';
 import 'package:smart_nagarpalika_dashboard/screens/overviewpage.dart';
 import 'package:smart_nagarpalika_dashboard/screens/user_management_page.dart';
@@ -8,7 +10,7 @@ import 'package:smart_nagarpalika_dashboard/utils/sideBar.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(AdminDashboardApp());
+  runApp(ProviderScope(child: AdminDashboardApp()));
 }
 
 class AdminDashboardApp extends StatelessWidget {
@@ -22,7 +24,7 @@ class AdminDashboardApp extends StatelessWidget {
       theme: ThemeData.light().copyWith(
         scaffoldBackgroundColor: Colors.grey[100],
       ),
-      home: EmployeeManagementPage(),
+      home: const LoginPage(),
     );
   }
 }

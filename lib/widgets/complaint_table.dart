@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:smart_nagarpalika_dashboard/model/compllaints_model.dart';
+import 'package:smart_nagarpalika_dashboard/utils/view_complaint.dart';
 
 class Complaint_Table extends StatefulWidget {
   final List<ComplaintModel> complaints;
@@ -172,6 +173,23 @@ class _Complaint_TableState extends State<Complaint_Table> {
                             ? Colors.white
                             : Colors.grey.shade50;
                       }),
+                      onSelectChanged: (selected) {
+                        showDialog(
+                          context: context,
+                          builder: (context) => ViewComplaint(
+                            departments: [
+                              Department(
+                                code: '1',
+                                displayName: 'Department 1',
+                              ),
+                            ],
+                          ),
+                        );
+                        if (selected == true) {
+                          // Example: show details or print
+                          print('Row tapped: ${complaint.id}');
+                        }
+                      },
                       cells: [
                         DataCell(
                           Container(

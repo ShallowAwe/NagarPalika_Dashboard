@@ -4,6 +4,7 @@ import 'package:smart_nagarpalika_dashboard/data/dummyuser.dart';
 import 'package:smart_nagarpalika_dashboard/model/compllaints_model.dart';
 import 'package:smart_nagarpalika_dashboard/utils/graph.dart';
 import 'package:smart_nagarpalika_dashboard/utils/summaryCards.dart';
+import 'package:smart_nagarpalika_dashboard/widgets/quickaction_cards.dart';
 
 class Overviewpage extends StatefulWidget {
   const Overviewpage({super.key});
@@ -327,27 +328,27 @@ class _OverviewpageState extends State<Overviewpage>
                     Row(
                       children: [
                         Expanded(
-                          child: _buildQuickActionCard(
+                          child: buildQuickActionCard(
                             icon: Icons.add_circle,
-                            title: 'New Complaint',
-                            subtitle: 'Register a new complaint',
+                            title: 'New Employee',
+                            subtitle: 'Register a new employee',
                             color: Colors.blue,
                             onTap: () {},
                           ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          child: _buildQuickActionCard(
+                          child: buildQuickActionCard(
                             icon: Icons.people,
-                            title: 'Manage Users',
-                            subtitle: 'View and manage users',
+                            title: 'Manage Employee',
+                            subtitle: 'View and manage employees',
                             color: Colors.green,
                             onTap: () {},
                           ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          child: _buildQuickActionCard(
+                          child: buildQuickActionCard(
                             icon: Icons.analytics,
                             title: 'View Reports',
                             subtitle: 'Generate detailed reports',
@@ -505,53 +506,4 @@ class _OverviewpageState extends State<Overviewpage>
     );
   }
 
-  Widget _buildQuickActionCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withOpacity(0.2), width: 1),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, size: 24, color: color),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade800,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
+    }

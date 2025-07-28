@@ -1,4 +1,5 @@
 class Employee {
+  final int id;
   final String firstName;
   final String lastName;
   final String department;
@@ -7,6 +8,7 @@ class Employee {
   final List<String> assignedComplaints;
 
   Employee({
+    required this.id,
     required this.firstName,
     required this.lastName,
     required this.department,
@@ -18,6 +20,7 @@ class Employee {
   /// Factory constructor to create Employee from JSON
   factory Employee.fromJson(Map<String, dynamic> json) {
     return Employee(
+      id: json['id'] ?? 0,
       firstName: json['firstname'] ?? '',
       lastName: json['lastname'] ?? '',
       department: json['department'] ?? '',
@@ -30,7 +33,8 @@ class Employee {
   /// Convert Employee object to JSON
   Map<String, dynamic> toJson() {
     return {
-      'firstName': firstName,
+      'id': id,
+        'firstName': firstName,
       'lastName': lastName,
       'department': department,
       'wards': wards,
@@ -49,6 +53,7 @@ class Employee {
     List<String>? assignedComplaints,
   }) {
     return Employee(
+      id: id,
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
       department: department ?? this.department,
