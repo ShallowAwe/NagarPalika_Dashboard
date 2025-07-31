@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_nagarpalika_dashboard/screens/complaint_management_page.dart';
+import 'package:smart_nagarpalika_dashboard/screens/department_page.dart';
 import 'package:smart_nagarpalika_dashboard/screens/employee_management_page.dart';
 // import 'package:smart_nagarpalika_dashboard/screens/employee_management_page.dart';
 import 'package:smart_nagarpalika_dashboard/screens/login_page.dart';
@@ -93,7 +94,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       case 3:
         return EmployeeManagementPage();
       case 4:
-        return Center(child: Text("Departments"));
+        return DepartmentPage();
       case 5:
         return Center(child: Text("Alerts"));
       default:

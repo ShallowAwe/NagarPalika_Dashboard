@@ -1,13 +1,10 @@
 class Department {
-  final String code;
-  final String displayName;
+  final int id;
+  final String name;
 
-  Department({required this.code, required this.displayName});
+  Department({required this.id, required this.name});
 
   factory Department.fromJson(Map<String, dynamic> json) {
-    return Department(
-      code: json['code'],
-      displayName: json['displayName'],
-    );
+    return Department(id: json['id'] as int, name: json['name'] as String);
   }
 }

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 import 'package:smart_nagarpalika_dashboard/model/department_model.dart';
 import 'package:smart_nagarpalika_dashboard/model/employee_model.dart';
 import 'package:smart_nagarpalika_dashboard/providers/department_provider.dart';
 import 'package:smart_nagarpalika_dashboard/providers/employee_provider.dart';
-import 'package:smart_nagarpalika_dashboard/services/department_service.dart';
 import 'package:smart_nagarpalika_dashboard/utils/button.dart';
 import 'package:smart_nagarpalika_dashboard/utils/searchBar.dart';
 import 'package:smart_nagarpalika_dashboard/utils/summaryCards.dart';
@@ -21,14 +21,24 @@ class EmployeeManagementPage extends ConsumerStatefulWidget {
 
 class _EmployeeManagementPageState
     extends ConsumerState<EmployeeManagementPage> {
-  String selectedDepartment = 'ALL_DEPARTMENTS'; // Use code for internal value
-  String selectedStatus = 'All Statuses'; // Example for status filter
+  // ==================== STATE VARIABLES ====================
+  final Logger _logger = Logger();
+
+  // Filter state variables
+  String selectedDepartment =
+      'ALL_DEPARTMENTS'; // Internal value for department filter
+  String selectedStatus = 'All Statuses'; // Status filter value
+
+  // Search functionality
   final TextEditingController searchController = TextEditingController();
   String searchQuery = '';
 
+  // ==================== LIFECYCLE METHODS ====================
   @override
   void initState() {
     super.initState();
+
+    // Set up search listener to update filter in real-time
     searchController.addListener(() {
       setState(() {
         searchQuery = searchController.text.toLowerCase();
@@ -38,36 +48,193 @@ class _EmployeeManagementPageState
 
   @override
   void dispose() {
+    // Clean up resources
     searchController.dispose();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // Assuming departmentProvider returns List<Department>; if it returns JSON, parse here
-    final List<Department> departments =
-        ref.watch(departmentProvider).valueOrNull ?? [];
+  // ==================== HELPER METHODS ====================
 
-    final List<Employee> employees =
-        ref.watch(employeeProvider).valueOrNull ?? [];
+  /// Returns color based on employee status
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Active':
+        return Colors.green;
+      case 'Inactive':
+        return Colors.red;
+      case 'On Leave':
+        return Colors.orange;
+      case 'Suspended':
+        return Colors.grey;
+      default:
+        return Colors.grey;
+    }
+  }
 
-    // Apply filters
-    List<Employee> filteredEmployees = employees.where((employee) {
+  /// Builds the department dropdown with proper error handling
+  Widget _buildDepartmentDropdown(List<Department> departments) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.grey.shade50,
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: selectedDepartment.toString(),
+          icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey.shade600),
+          isExpanded: true,
+          style: const TextStyle(
+            fontSize: 14,
+            color: Colors.black87,
+            fontWeight: FontWeight.w500,
+          ),
+          // Build dropdown items with error handling
+          items: _buildDepartmentDropdownItems(departments),
+          onChanged: (String? newValue) {
+            if (newValue != null) {
+              setState(() {
+                selectedDepartment = newValue;
+                _logger.d('Department filter changed to: $newValue');
+              });
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Builds department dropdown items with proper null safety
+  List<DropdownMenuItem<String>> _buildDepartmentDropdownItems(
+    List<Department> departments,
+  ) {
+    List<DropdownMenuItem<String>> items = [
+      // Default "All Departments" option
+      const DropdownMenuItem<String>(
+        value: 'ALL_DEPARTMENTS',
+        child: Text('All Departments'),
+      ),
+    ];
+
+    // Add department items with null safety checks
+    for (Department dept in departments) {
+      if (dept.id != null && dept.name != null) {
+        items.add(
+          DropdownMenuItem<String>(
+            value: dept.id!.toString(),
+            child: Text(
+              dept.name.toString(),
+              overflow: TextOverflow.ellipsis, // Handle long department names
+            ),
+          ),
+        );
+      }
+    }
+
+    return items;
+  }
+
+  /// Builds the status dropdown
+  Widget _buildStatusDropdown(List<String> statuses) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.grey.shade50,
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: selectedStatus,
+          icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey.shade600),
+          isExpanded: true,
+          style: const TextStyle(
+            fontSize: 14,
+            color: Colors.black87,
+            fontWeight: FontWeight.w500,
+          ),
+          items: statuses.map((String status) {
+            return DropdownMenuItem<String>(
+              value: status,
+              child: Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: _getStatusColor(status),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(status, overflow: TextOverflow.ellipsis),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+          onChanged: (String? newValue) {
+            if (newValue != null) {
+              setState(() {
+                selectedStatus = newValue;
+              });
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Filters employees based on current filter criteria
+  List<Employee> _getFilteredEmployees(List<Employee> employees) {
+    return employees.where((employee) {
+      // Department filtering - handle null safety
       final matchesDepartment =
           selectedDepartment == 'ALL_DEPARTMENTS' ||
-          employee.department.toUpperCase() == selectedDepartment.toUpperCase();
-      final matchesSearch = employee.firstName.toLowerCase().contains(
-        searchQuery,
-      ); // Adjust to your Employee fields
-      final matchesLastName =
-          selectedStatus == 'All Statuses' ||
-          employee.lastName.toLowerCase().contains(
-            searchQuery,
-          ); // Assuming status is a string in Employee
-      return matchesDepartment && matchesSearch && matchesLastName;
-    }).toList();
+          (employee.department != null &&
+              employee.department == selectedDepartment);
 
-    // Example statuses (adjust to your app's needs)
+      // Search filtering - check both first name and last name with null safety
+      final matchesSearch =
+          searchQuery.isEmpty ||
+          (employee.firstName?.toLowerCase().contains(searchQuery) ?? false) ||
+          (employee.lastName?.toLowerCase().contains(searchQuery) ?? false);
+
+      // Status filtering - for now just return true since status isn't in employee model
+      // TODO: Implement proper status filtering when status field is added to Employee model
+      final matchesStatus = selectedStatus == 'All Statuses';
+
+      // Debug logging for department filtering
+      if (selectedDepartment != 'ALL_DEPARTMENTS') {
+        _logger.d(
+          'Filtering - Employee: ${employee.firstName} ${employee.lastName}, '
+          'Department: ${employee.department}, Selected: $selectedDepartment, '
+          'Matches: $matchesDepartment',
+        );
+      }
+
+      return matchesDepartment && matchesSearch && matchesStatus;
+    }).toList();
+  }
+
+  // ==================== BUILD METHOD ====================
+  @override
+  Widget build(BuildContext context) {
+    // ==================== DATA PROVIDERS ====================
+    // Watch department and employee providers with proper error handling
+    final departmentAsyncValue = ref.watch(departmentProvider);
+    final employeeAsyncValue = ref.watch(employeeProvider);
+
+    // Extract data with null safety
+    final List<Department> departments = departmentAsyncValue.valueOrNull ?? [];
+    final List<Employee> employees = employeeAsyncValue.valueOrNull ?? [];
+
+    // Apply filters to get filtered employee list
+    final List<Employee> filteredEmployees = _getFilteredEmployees(employees);
+
+    // Status options - can be moved to a constants file later
     final List<String> statuses = [
       'All Statuses',
       'Active',
@@ -75,6 +242,44 @@ class _EmployeeManagementPageState
       'On Leave',
       'Suspended',
     ];
+
+    // Handle loading states
+    if (departmentAsyncValue.isLoading || employeeAsyncValue.isLoading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFECF6FE),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // Handle error states
+    if (departmentAsyncValue.hasError || employeeAsyncValue.hasError) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFECF6FE),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              Text(
+                'Error loading data: ${departmentAsyncValue.error ?? employeeAsyncValue.error}',
+                style: const TextStyle(color: Colors.red),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  // Refresh data
+                  ref.invalidate(departmentProvider);
+                  ref.invalidate(employeeProvider);
+                },
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFECF6FE),
@@ -84,7 +289,7 @@ class _EmployeeManagementPageState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header Section (unchanged from previous)
+            // ==================== HEADER SECTION ====================
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -102,6 +307,7 @@ class _EmployeeManagementPageState
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  // Left side - Title and subtitle with icon
                   Row(
                     children: [
                       Container(
@@ -136,13 +342,14 @@ class _EmployeeManagementPageState
                       ),
                     ],
                   ),
+                  // Right side - Add Employee button
                   CustomButton(
                     label: 'Add Employee',
                     icon: Icons.add,
                     onPressed: () {
                       showDialog(
                         context: context,
-                        builder: (context) => AddEmployeeForm(),
+                        builder: (context) => const AddEmployeeForm(),
                       );
                     },
                     color: Colors.blue.shade600,
@@ -155,7 +362,7 @@ class _EmployeeManagementPageState
 
             const SizedBox(height: 24),
 
-            // Filter Section (unchanged from previous, but using Department model)
+            // ==================== FILTER & CONTENT SECTION ====================
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -173,6 +380,7 @@ class _EmployeeManagementPageState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // ==================== FILTERS HEADER ====================
                   const Text(
                     'Filters & Search',
                     style: TextStyle(
@@ -182,6 +390,8 @@ class _EmployeeManagementPageState
                     ),
                   ),
                   const SizedBox(height: 16),
+
+                  // ==================== FILTER CONTROLS ROW ====================
                   Row(
                     children: [
                       // Search Bar
@@ -194,122 +404,22 @@ class _EmployeeManagementPageState
                         ),
                       ),
                       const SizedBox(width: 20),
-                      // Department Filter
+
+                      // Department Filter Dropdown
                       Expanded(
                         flex: 1,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.shade300),
-                            borderRadius: BorderRadius.circular(12),
-                            color: Colors.grey.shade50,
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: selectedDepartment,
-                              icon: Icon(
-                                Icons.keyboard_arrow_down,
-                                color: Colors.grey.shade600,
-                              ),
-                              isExpanded: true,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.black87,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              items: [
-                                // Add 'ALL_DEPARTMENTS' explicitly
-                                if (!departments.any(
-                                  (dept) => dept.code == 'ALL_DEPARTMENTS',
-                                ))
-                                  const DropdownMenuItem<String>(
-                                    value: 'ALL_DEPARTMENTS',
-                                    child: Text('All Departments'),
-                                  ),
-                                // Map actual departments (assuming Department has 'code' and 'name')
-                                ...departments.map((Department dept) {
-                                  return DropdownMenuItem<String>(
-                                    value:
-                                        dept.code, // Use unique code for value
-                                    child: Text(
-                                      dept.displayName,
-                                    ), // Use display name
-                                  );
-                                }),
-                              ],
-                              onChanged: (String? newValue) {
-                                setState(() {
-                                  selectedDepartment = newValue!;
-                                });
-                              },
-                            ),
-                          ),
-                        ),
+                        child: _buildDepartmentDropdown(departments),
                       ),
 
                       const SizedBox(width: 20),
-                      // Status Filter (example)
-                      Expanded(
-                        flex: 1,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.shade300),
-                            borderRadius: BorderRadius.circular(12),
-                            color: Colors.grey.shade50,
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: selectedStatus,
-                              icon: Icon(
-                                Icons.keyboard_arrow_down,
-                                color: Colors.grey.shade600,
-                              ),
-                              isExpanded: true,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.black87,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              items: statuses.map((String status) {
-                                return DropdownMenuItem<String>(
-                                  value: status,
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 8,
-                                        height: 8,
-                                        decoration: BoxDecoration(
-                                          color: _getStatusColor(status),
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(status),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (String? newValue) {
-                                setState(() {
-                                  selectedStatus = newValue!;
-                                });
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
+
+                      // Status Filter Dropdown
+                      Expanded(flex: 1, child: _buildStatusDropdown(statuses)),
                     ],
                   ),
                   const SizedBox(height: 24),
 
-                  // Summary Cards (updated to use filteredEmployees)
+                  // ==================== SUMMARY CARDS SECTION ====================
                   Row(
                     children: [
                       Expanded(
@@ -320,16 +430,16 @@ class _EmployeeManagementPageState
                         ),
                       ),
                       const SizedBox(width: 16),
-                      // Add other cards here, e.g., based on status filters
                     ],
                   ),
 
                   const SizedBox(height: 24),
 
-                  // Employee Table Section
+                  // ==================== EMPLOYEE TABLE SECTION ====================
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Table header with count
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -350,7 +460,7 @@ class _EmployeeManagementPageState
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                'Showing ${filteredEmployees.length} filtered employees',
+                                'Showing ${filteredEmployees.length} of ${employees.length} employees',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.grey.shade600,
@@ -361,6 +471,8 @@ class _EmployeeManagementPageState
                         ],
                       ),
                       const SizedBox(height: 20),
+
+                      // Employee table container
                       Container(
                         height: 500,
                         decoration: BoxDecoration(
@@ -369,32 +481,7 @@ class _EmployeeManagementPageState
                         ),
                         child: Center(
                           child: filteredEmployees.isEmpty
-                              ? Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Icon(
-                                      Icons.table_chart,
-                                      size: 48,
-                                      color: Colors.grey,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    const Text(
-                                      'No employees match the filters',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    const Text(
-                                      'Try adjusting search or department',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ],
-                                )
+                              ? _buildEmptyState()
                               : EmployeeTable(employees: filteredEmployees),
                         ),
                       ),
@@ -409,18 +496,42 @@ class _EmployeeManagementPageState
     );
   }
 
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'Active':
-        return Colors.green;
-      case 'Inactive':
-        return Colors.red;
-      case 'On Leave':
-        return Colors.orange;
-      case 'Suspended':
-        return Colors.grey;
-      default:
-        return Colors.grey;
-    }
+  // ==================== EMPTY STATE WIDGET ====================
+  /// Builds the empty state when no employees match filters
+  Widget _buildEmptyState() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.search_off, size: 48, color: Colors.grey),
+        const SizedBox(height: 16),
+        const Text(
+          'No employees found',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          searchQuery.isNotEmpty
+              ? 'No employees match your search criteria'
+              : 'Try adjusting your filters',
+          style: const TextStyle(fontSize: 12, color: Colors.grey),
+        ),
+        const SizedBox(height: 16),
+        TextButton(
+          onPressed: () {
+            setState(() {
+              selectedDepartment = 'ALL_DEPARTMENTS';
+              selectedStatus = 'All Statuses';
+              searchController.clear();
+              searchQuery = '';
+            });
+          },
+          child: const Text('Clear All Filters'),
+        ),
+      ],
+    );
   }
 }

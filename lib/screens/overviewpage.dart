@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:smart_nagarpalika_dashboard/data/dummy_complaints.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+// import 'package:smart_nagarpalika_dashboard/data/dummy_complaints.dart';
 import 'package:smart_nagarpalika_dashboard/data/dummyuser.dart';
 import 'package:smart_nagarpalika_dashboard/model/compllaints_model.dart';
+import 'package:smart_nagarpalika_dashboard/providers/complaint_provider.dart';
 import 'package:smart_nagarpalika_dashboard/utils/graph.dart';
 import 'package:smart_nagarpalika_dashboard/utils/summaryCards.dart';
 import 'package:smart_nagarpalika_dashboard/widgets/quickaction_cards.dart';
 
-class Overviewpage extends StatefulWidget {
+class Overviewpage extends ConsumerStatefulWidget {
   const Overviewpage({super.key});
 
   @override
-  State<Overviewpage> createState() => _OverviewpageState();
+  ConsumerState<Overviewpage> createState() => _OverviewpageState();
 }
 
-class _OverviewpageState extends State<Overviewpage>
+class _OverviewpageState extends ConsumerState<Overviewpage>
     with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late AnimationController _slideController;
@@ -79,6 +81,9 @@ class _OverviewpageState extends State<Overviewpage>
 
   @override
   Widget build(BuildContext context) {
+    final complaintsAsync = ref.watch(complaintsProvider);
+    final complaints = complaintsAsync.valueOrNull ?? [];
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SingleChildScrollView(
@@ -195,7 +200,7 @@ class _OverviewpageState extends State<Overviewpage>
             // Enhanced Summary Cards
             ScaleTransition(
               scale: _scaleAnimation,
-              child: _buildSummaryCardsGrid(),
+              child: _buildSummaryCardsGrid(complaints),
             ),
 
             const SizedBox(height: 32),
@@ -368,13 +373,13 @@ class _OverviewpageState extends State<Overviewpage>
     );
   }
 
-  Widget _buildSummaryCardsGrid() {
-    String resolvedCount = dummyComplaints
-        .where((c) => c.status == ComplaintStatus.RESOLVED)
+  Widget _buildSummaryCardsGrid(List<ComplaintModel> complaints) {
+    String resolvedCount = complaints
+        .where((c) => c.status.toLowerCase() == 'resolved')
         .length
         .toString();
-    String pendingCount = dummyComplaints
-        .where((c) => c.status == ComplaintStatus.PENDING)
+    String pendingCount = complaints
+        .where((c) => c.status.toLowerCase() == 'pending')
         .length
         .toString();
 
@@ -383,7 +388,7 @@ class _OverviewpageState extends State<Overviewpage>
         0,
         SummaryCard(
           title: "Total Complaints",
-          subtitle: dummyComplaints.length.toString(),
+          subtitle: complaints.length.toString(),
           icon: Icons.report_problem,
           iconBgColor: Colors.red.shade100,
         ),
@@ -505,5 +510,4 @@ class _OverviewpageState extends State<Overviewpage>
       },
     );
   }
-
-    }
+}

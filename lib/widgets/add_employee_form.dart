@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
 
 class AddEmployeeForm extends StatefulWidget {
   const AddEmployeeForm({super.key});
@@ -11,6 +12,7 @@ class AddEmployeeForm extends StatefulWidget {
 }
 
 class _AddEmployeeFormState extends State<AddEmployeeForm> {
+  final Logger _logger = Logger();
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
@@ -312,8 +314,8 @@ class _AddEmployeeFormState extends State<AddEmployeeForm> {
           }
         });
       } else {
-        debugPrint(
-          'Failed to fetch departments: \nStatus: \\${response.statusCode}\nBody: \\${response.body}',
+        _logger.e(
+          'Failed to fetch departments: Status: ${response.statusCode}, Body: ${response.body}',
         );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -324,8 +326,8 @@ class _AddEmployeeFormState extends State<AddEmployeeForm> {
         );
       }
     } catch (e, stack) {
-      debugPrint(
-        'Exception in _fetchDepartments: \nError: \\${e.toString()}\nStack: \\${stack.toString()}',
+      _logger.e(
+        'Exception in _fetchDepartments: Error: ${e.toString()}, Stack: ${stack.toString()}',
       );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -341,7 +343,7 @@ class _AddEmployeeFormState extends State<AddEmployeeForm> {
     try {
       final basicAuth =
           'Basic ' + base64Encode(utf8.encode('$username:$password'));
-      debugPrint(
+      _logger.d(
         'Auth header: Basic ' +
             base64Encode(utf8.encode('$username:$password')),
       );
@@ -364,8 +366,8 @@ class _AddEmployeeFormState extends State<AddEmployeeForm> {
         );
         Navigator.of(context).pop();
       } else {
-        debugPrint(
-          'Failed to create employee: \nStatus: \\${response.statusCode}\nBody: \\${response.body}',
+        _logger.e(
+          'Failed to create employee: Status: ${response.statusCode}, Body: ${response.body}',
         );
         String errorMsg = 'Failed to create employee';
         try {
@@ -383,8 +385,8 @@ class _AddEmployeeFormState extends State<AddEmployeeForm> {
         ).showSnackBar(SnackBar(content: Text('Failed: \\${errorMsg}')));
       }
     } catch (e, stack) {
-      debugPrint(
-        'Exception in _createEmployee: \nError: \\${e.toString()}\nStack: \\${stack.toString()}',
+      _logger.e(
+        'Exception in _createEmployee: Error: ${e.toString()}, Stack: ${stack.toString()}',
       );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error creating employee: \\${e.toString()}')),

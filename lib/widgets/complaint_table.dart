@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 
 import 'package:smart_nagarpalika_dashboard/model/compllaints_model.dart';
 import 'package:smart_nagarpalika_dashboard/utils/view_complaint.dart';
@@ -22,6 +23,7 @@ class Complaint_Table extends StatefulWidget {
 }
 
 class _Complaint_TableState extends State<Complaint_Table> {
+  final Logger _logger = Logger();
   int currentPage = 0;
 
   int get totalPages => (widget.complaints.length / widget.itemsPerPage).ceil();
@@ -148,6 +150,9 @@ class _Complaint_TableState extends State<Complaint_Table> {
                     DataColumn(
                       label: _buildColumnHeader('Images', Icons.image),
                     ),
+                    DataColumn(
+                      label: _buildColumnHeader('Assigned To', Icons.person),
+                    ),
                     const DataColumn(
                       label: Text(
                         'Actions',
@@ -176,18 +181,12 @@ class _Complaint_TableState extends State<Complaint_Table> {
                       onSelectChanged: (selected) {
                         showDialog(
                           context: context,
-                          builder: (context) => ViewComplaint(
-                            departments: [
-                              Department(
-                                code: '1',
-                                displayName: 'Department 1',
-                              ),
-                            ],
-                          ),
+                          builder: (context) =>
+                              ViewComplaint(complaints: [complaint]),
                         );
                         if (selected == true) {
-                          // Example: show details or print
-                          print('Row tapped: ${complaint.id}');
+                          // Example: show details or log
+                          _logger.d('Row tapped: ${complaint.id}');
                         }
                       },
                       cells: [
@@ -215,7 +214,7 @@ class _Complaint_TableState extends State<Complaint_Table> {
                             message: complaint.description,
                             child: Container(
                               // height: 500,
-                              constraints: const BoxConstraints(maxWidth: 200),
+                              constraints: const BoxConstraints(maxWidth: 900),
                               child: Text(
                                 complaint.description,
                                 maxLines: 2,
@@ -238,7 +237,7 @@ class _Complaint_TableState extends State<Complaint_Table> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              complaint.category,
+                              complaint.departmentName,
                               style: TextStyle(
                                 color: Colors.orange.shade800,
                                 fontWeight: FontWeight.w500,
@@ -343,7 +342,7 @@ class _Complaint_TableState extends State<Complaint_Table> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: complaint.imageUrls.isEmpty
+                              color: complaint.imageUrls?.isEmpty ?? true
                                   ? Colors.grey.shade100
                                   : Colors.purple.shade50,
                               borderRadius: BorderRadius.circular(8),
@@ -354,15 +353,15 @@ class _Complaint_TableState extends State<Complaint_Table> {
                                 Icon(
                                   Icons.image,
                                   size: 16,
-                                  color: complaint.imageUrls.isEmpty
+                                  color: complaint.imageUrls?.isEmpty ?? true
                                       ? Colors.grey.shade600
                                       : Colors.purple.shade600,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  complaint.imageUrls.length.toString(),
+                                  (complaint.imageUrls?.length ?? 0).toString(),
                                   style: TextStyle(
-                                    color: complaint.imageUrls.isEmpty
+                                    color: complaint.imageUrls?.isEmpty ?? true
                                         ? Colors.grey.shade600
                                         : Colors.purple.shade800,
                                     fontWeight: FontWeight.bold,
@@ -371,6 +370,21 @@ class _Complaint_TableState extends State<Complaint_Table> {
                                 ),
                               ],
                             ),
+                          ),
+                        ),
+                        DataCell(
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.person,
+                                size: 16,
+                                color: Colors.grey.shade600,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                complaint.assignedEmployeeName ?? 'Employee',
+                              ),
+                            ],
                           ),
                         ),
                         DataCell(
@@ -535,47 +549,55 @@ class _Complaint_TableState extends State<Complaint_Table> {
     return '${date.day}/${date.month}/${date.year}';
   }
 
-  Color _getStatusColor(ComplaintStatus status) {
+  Color _getStatusColor(String status) {
     switch (status) {
-      case ComplaintStatus.PENDING:
+      case 'Pending':
         return Colors.orange.shade100;
-      case ComplaintStatus.IN_PROGRESS:
+      case 'in_progress':
         return Colors.blue.shade100;
-      case ComplaintStatus.RESOLVED:
+      case 'resolved':
         return Colors.green.shade100;
+      default:
+        return Colors.grey.shade100;
     }
   }
 
-  Color _getStatusIndicatorColor(ComplaintStatus status) {
+  Color _getStatusIndicatorColor(String status) {
     switch (status) {
-      case ComplaintStatus.PENDING:
+      case 'Pending':
         return Colors.orange;
-      case ComplaintStatus.IN_PROGRESS:
+      case 'c':
         return Colors.blue;
-      case ComplaintStatus.RESOLVED:
+      case 'Resolved':
         return Colors.green;
+      default:
+        return Colors.grey;
     }
   }
 
-  Color _getStatusTextColor(ComplaintStatus status) {
+  Color _getStatusTextColor(String status) {
     switch (status) {
-      case ComplaintStatus.PENDING:
+      case 'Pending':
         return Colors.orange.shade800;
-      case ComplaintStatus.IN_PROGRESS:
+      case 'in_progress':
         return Colors.blue.shade800;
-      case ComplaintStatus.RESOLVED:
+      case 'resolved':
         return Colors.green.shade800;
+      default:
+        return Colors.grey.shade800;
     }
   }
 
-  String _getStatusText(ComplaintStatus status) {
+  String _getStatusText(String status) {
     switch (status) {
-      case ComplaintStatus.PENDING:
+      case 'Pending':
         return 'Pending';
-      case ComplaintStatus.IN_PROGRESS:
+      case 'In_Progress':
         return 'In Progress';
-      case ComplaintStatus.RESOLVED:
+      case 'resolved':
         return 'Resolved';
+      default:
+        return 'Unknown';
     }
   }
 

@@ -12,6 +12,7 @@ class SummaryCard extends StatefulWidget {
     required this.subtitle,
     this.icon = Icons.insert_chart_outlined_rounded,
     this.iconBgColor = const Color(0xFFE3F2FD),
+    // required String value,
   });
 
   @override
@@ -34,10 +35,10 @@ class _SummaryCardState extends State<SummaryCard> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          color: _isHovered ? Color.fromARGB(255, 227, 242, 253): Colors.white,
+          color: _isHovered ? Color.fromARGB(255, 227, 242, 253) : Colors.white,
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
-            onTap: () { 
+            onTap: () {
               // Handle tap
             },
             child: Padding(
