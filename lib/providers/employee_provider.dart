@@ -1,10 +1,12 @@
-
 import 'package:riverpod/riverpod.dart';
-   
+
 import 'package:smart_nagarpalika_dashboard/model/employee_model.dart';
 import 'package:smart_nagarpalika_dashboard/services/employee_services.dart';
 
 /// Riverpod provider for managing and caching employees.
-/// This is tied to [EmployeeNotifier], which handles fetching logic.
-final employeeProvider =
-    AsyncNotifierProvider<EmployeeNotifier, List<Employee>>(EmployeeNotifier.new);
+/// This is tied to [EmployeeNotifier], which handles fetching logic
+final employeeServiceProvider = Provider((ref) => EmployeeServices());
+final employeeProvider = FutureProvider<List<Employee>>((ref) async {
+  final service = ref.read(employeeServiceProvider);
+  return await service.fetchAllEmployee();
+});

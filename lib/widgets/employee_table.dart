@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:smart_nagarpalika_dashboard/model/employee_model.dart';
 
 class EmployeeTable extends StatelessWidget {
@@ -8,13 +9,17 @@ class EmployeeTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Logger _logger = Logger();
+    _logger.i('Building EmployeeTable with ${employees.length} employees');
+    _logger.d('Employee data: $employees');
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withAlpha(25),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -24,13 +29,16 @@ class EmployeeTable extends StatelessWidget {
         children: [
           _buildTableHeader(),
           const Divider(height: 0),
-          ...employees.map((emp) => _buildRow(context, emp)).toList(),
+          ...employees.map((emp) => _buildRow(context, emp)),
         ],
       ),
     );
   }
 
   Widget _buildTableHeader() {
+    Logger _logger = Logger();
+    _logger.d('Building table header');
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
@@ -51,6 +59,12 @@ class EmployeeTable extends StatelessWidget {
   }
 
   Widget _buildRow(BuildContext context, Employee emp) {
+    Logger _logger = Logger();
+    _logger.d(
+      'Building row for employee: ID=${emp.id}, Name=${emp.firstName} ${emp.lastName}',
+    );
+    _logger.v('Employee details: $emp');
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: const BoxDecoration(
@@ -60,7 +74,10 @@ class EmployeeTable extends StatelessWidget {
         children: [
           Expanded(flex: 1, child: Text(emp.id.toString())),
           Expanded(flex: 2, child: Text('${emp.firstName} ${emp.lastName}')),
-          Expanded(flex: 2, child: Text(emp.firstName)), // Username logic placeholder
+          Expanded(
+            flex: 2,
+            child: Text(emp.firstName),
+          ), // Username logic placeholder
           Expanded(flex: 2, child: Text(emp.contactInfo)),
           Expanded(flex: 2, child: _buildDepartmentChip(emp.department)),
           Expanded(flex: 2, child: _buildActionButtons(context, emp)),
@@ -70,6 +87,9 @@ class EmployeeTable extends StatelessWidget {
   }
 
   Widget _buildDepartmentChip(String department) {
+    Logger _logger = Logger();
+    _logger.d('Building department chip for: $department');
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -78,16 +98,23 @@ class EmployeeTable extends StatelessWidget {
       ),
       child: Text(
         department,
-        style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.w500),
+        style: const TextStyle(
+          color: Colors.orange,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }
 
   Widget _buildActionButtons(BuildContext context, Employee emp) {
+    Logger _logger = Logger();
+    _logger.d('Building action buttons for employee: ID=${emp.id}');
+
     return Row(
       children: [
         TextButton(
           onPressed: () {
+            _logger.i('View button pressed for employee: ID=${emp.id}');
             // View logic
           },
           child: const Text('View'),
@@ -95,6 +122,7 @@ class EmployeeTable extends StatelessWidget {
         const SizedBox(width: 8),
         TextButton(
           onPressed: () {
+            _logger.i('Assign button pressed for employee: ID=${emp.id}');
             // Assign department logic
           },
           child: const Text('Assign'),

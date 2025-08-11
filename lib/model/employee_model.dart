@@ -3,7 +3,7 @@ class Employee {
   final String firstName;
   final String lastName;
   final String department;
-  final List<String> wards;
+  final List<String> wardsName;
   final String contactInfo;
   final List<String> assignedComplaints;
 
@@ -12,7 +12,7 @@ class Employee {
     required this.firstName,
     required this.lastName,
     required this.department,
-    required this.wards,
+    required this.wardsName,
     required this.contactInfo,
     required this.assignedComplaints,
   });
@@ -24,7 +24,7 @@ class Employee {
       firstName: json['firstname'] ?? '',
       lastName: json['lastname'] ?? '',
       department: json['department'] ?? '',
-      wards: [], // Assuming this is not sent by API
+      wardsName: json['wardsName'] ?? [],
       contactInfo: json['mobile'] ?? '',
       assignedComplaints: List<String>.from(json['assignedComplaints'] ?? []),
     );
@@ -34,10 +34,10 @@ class Employee {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-        'firstName': firstName,
+      'firstName': firstName,
       'lastName': lastName,
       'department': department,
-      'wards': wards,
+      'wards': wardsName,
       'contactInfo': contactInfo,
       'assignedComplaints': assignedComplaints,
     };
@@ -57,7 +57,7 @@ class Employee {
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
       department: department ?? this.department,
-      wards: wards ?? this.wards,
+      wardsName: wardsName ?? this.wardsName,
       contactInfo: contactInfo ?? this.contactInfo,
       assignedComplaints: assignedComplaints ?? this.assignedComplaints,
     );

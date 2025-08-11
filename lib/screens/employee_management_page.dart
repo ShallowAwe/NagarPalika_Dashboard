@@ -226,6 +226,7 @@ class _EmployeeManagementPageState
     // Watch department and employee providers with proper error handling
     final departmentAsyncValue = ref.watch(departmentProvider);
     final employeeAsyncValue = ref.watch(employeeProvider);
+    _logger.d('Employees fetched: $employeeAsyncValue');
 
     // Extract data with null safety
     final List<Department> departments = departmentAsyncValue.valueOrNull ?? [];
