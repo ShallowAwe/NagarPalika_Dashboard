@@ -39,6 +39,7 @@ class Sidebar extends StatelessWidget {
     SidebarItem(icon: Icons.work_rounded, label: "Employees", index: 3),
     SidebarItem(icon: Icons.settings_rounded, label: "Departments", index: 4),
     SidebarItem(icon: Icons.notifications_active, label: "Alerts", index: 5),
+    SidebarItem(icon: Icons.map_rounded, label: "Locations", index: 6),
   ];
 
   @override

@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:riverpod/riverpod.dart';
+
 import 'package:logger/logger.dart';
 
 import 'package:smart_nagarpalika_dashboard/model/employee_model.dart';
@@ -10,11 +10,12 @@ class EmployeeServices {
 
   /// Fetch all complaints using Basic Auth
   Future<List<Employee>> fetchAllEmployee() async {
-    final response = await authorizedGet('/all_complaints');
+    final response = await authorizedGet('/employees');
 
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
-      final employees = data.map((json) => Employee.fromJson(json)).toList();
+      final employees = data
+          .map<Employee>((json) => Employee.fromJson(json)).toList();
       _logger.i('Fetched employees: ${employees.length}  retrieved');
       return employees;
     } else if (response.statusCode == 204) {

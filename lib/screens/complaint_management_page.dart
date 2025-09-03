@@ -1,6 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/logger.dart';
 import 'package:smart_nagarpalika_dashboard/model/compllaints_model.dart';
 import 'package:smart_nagarpalika_dashboard/model/department_model.dart';
 import 'package:smart_nagarpalika_dashboard/providers/complaint_provider.dart';
@@ -21,18 +21,64 @@ class ComplaintManagementPage extends ConsumerStatefulWidget {
 class _ComplaintManagementPageState
     extends ConsumerState<ComplaintManagementPage> {
   String selectedDepartment = 'All Departments';
-  String selectedStatus = 'Active';
+  String selectedStatus = 'All Statuses';
 
-  final List<String> statuses = ['Active', 'Inactive', 'On Leave', 'Suspended'];
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _searchDebounce;
+  final List<String> statuses = [
+    'All Statuses',
+    'Pending',
+    'In Progress',
+    'Resolved',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      _searchDebounce?.cancel();
+      _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+        if (mounted) setState(() {});
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchDebounce?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final complaintsAsync = ref.watch(complaintsProvider);
-    Logger().d('Complaints fetched: $complaintsAsync');
     final departmentsAsync = ref.watch(departmentProvider);
 
     return complaintsAsync.when(
       data: (complaints) {
+        // Apply client-side filters: department, status, and ID search
+        List<ComplaintModel> filteredComplaints = complaints.where((c) {
+          final bool departmentOk = selectedDepartment == 'All Departments'
+              ? true
+              : c.departmentName == selectedDepartment;
+
+          final String normalized = _normalizeStatus(c.status);
+          final bool statusOk = selectedStatus == 'All Statuses'
+              ? true
+              : normalized == selectedStatus;
+
+          final String q = _searchController.text.trim();
+          final bool idOk = q.isEmpty ? true : c.id.toString().contains(q);
+
+          return departmentOk && statusOk && idOk;
+        }).toList();
+        final int pendingCount = filteredComplaints
+            .where((complaint) => _normalizeStatus(complaint.status) == 'In Progress')
+            .length;
+        final int resolvedCount = filteredComplaints
+            .where((complaint) => _normalizeStatus(complaint.status) == 'Resolved')
+            .length;
         return departmentsAsync.when(
           data: (departments) {
             return Scaffold(
@@ -145,7 +191,7 @@ class _ComplaintManagementPageState
                               Expanded(
                                 flex: 2,
                                 child: Searchbar(
-                                  controller: TextEditingController(),
+                                  controller: _searchController,
                                   onTap: () {},
                                   isReadOnly: false,
                                 ),
@@ -279,7 +325,7 @@ class _ComplaintManagementPageState
                         Expanded(
                           child: SummaryCard(
                             title: 'Total Complaints',
-                            subtitle: complaints.length.toString(),
+                            subtitle: filteredComplaints.length.toString(),
                             icon: Icons.people,
                             // color: Colors.blue,
                             // trend: '+2',
@@ -289,13 +335,8 @@ class _ComplaintManagementPageState
                         const SizedBox(width: 16),
                         Expanded(
                           child: SummaryCard(
-                            title: 'Active Complaints',
-                            subtitle: complaints
-                                .where(
-                                  (complaint) => complaint.status == 'Pending',
-                                )
-                                .length
-                                .toString(),
+                            title: 'Inprogress Complaints',
+                            subtitle: pendingCount.toString(),
                             icon: Icons.check_circle,
                             // color: Colors.green,
                             // trend: '+1',
@@ -306,13 +347,8 @@ class _ComplaintManagementPageState
                         Expanded(
                           child: SummaryCard(
                             // iconBgColor: const Color.fromARGB(255, 113, 169, 115),s
-                            title: 'Completed Complaints',
-                            subtitle: complaints
-                                .where(
-                                  (complaint) => complaint.status == 'resolved',
-                                )
-                                .length
-                                .toString(),
+                            title: 'Resolved Complaints',
+                            subtitle: resolvedCount.toString(),
                             icon: Icons.person_off,
                             // color: Colors.orange,
                             // trend: '0',
@@ -359,7 +395,7 @@ class _ComplaintManagementPageState
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'Showing ${selectedDepartment == 'All Departments' ? 'all' : selectedDepartment} complaints',
+                                  'Showing ${selectedDepartment == 'All Departments' ? 'all' : selectedDepartment} complaints (${filteredComplaints.length})',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Colors.grey.shade600,
@@ -376,19 +412,19 @@ class _ComplaintManagementPageState
                             border: Border.all(color: Colors.grey.shade200),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: complaints.isEmpty
-                                  ? [
-                                      const Icon(
+                          child: filteredComplaints.isEmpty
+                              ? Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: const [
+                                      Icon(
                                         Icons.table_chart,
                                         size: 48,
                                         color: Colors.grey,
                                       ),
                                       SizedBox(height: 16),
                                       Text(
-                                        'Employee table will be displayed here',
+                                        'Complaint table will be displayed here',
                                         style: TextStyle(
                                           fontSize: 16,
                                           color: Colors.grey,
@@ -396,23 +432,19 @@ class _ComplaintManagementPageState
                                       ),
                                       SizedBox(height: 8),
                                       Text(
-                                        'Table will show employee details, actions, and status',
+                                        'Table will show Complaint details, actions, and status',
                                         style: TextStyle(
                                           fontSize: 12,
                                           color: Colors.grey,
                                         ),
                                       ),
-                                    ]
-                                  : [
-                                      Expanded(
-                                        child: Complaint_Table(
-                                          complaints: complaints,
-                                          itemsPerPage: 4,
-                                        ),
-                                      ),
                                     ],
-                            ),
-                          ),
+                                  ),
+                                )
+                              : Complaint_Table(
+                                  complaints: filteredComplaints,
+                                  itemsPerPage: 4,
+                                ),
                         ),
                       ],
                     ),
@@ -434,16 +466,24 @@ class _ComplaintManagementPageState
 
   Color _getStatusColor(String status) {
     switch (status) {
-      case 'Active':
-        return Colors.green;
-      case 'Inactive':
-        return Colors.red;
-      case 'On Leave':
+      case 'Pending':
         return Colors.orange;
-      case 'Suspended':
+      case 'In Progress':
+        return Colors.blue;
+      case 'Resolved':
+        return Colors.green;
+      case 'All Statuses':
         return Colors.grey;
       default:
         return Colors.grey;
     }
+  }
+
+  String _normalizeStatus(String raw) {
+    final lower = raw.toLowerCase();
+    if (lower.contains('progress')) return 'In Progress';
+    if (lower.contains('resolve')) return 'Resolved';
+    if (lower.contains('pend')) return 'Pending';
+    return raw;
   }
 }

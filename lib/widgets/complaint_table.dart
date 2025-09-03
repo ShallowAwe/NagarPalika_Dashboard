@@ -57,6 +57,7 @@ class _Complaint_TableState extends State<Complaint_Table> {
 
   @override
   Widget build(BuildContext context) {
+    
     return Container(
       decoration: BoxDecoration(
         color: const Color.fromARGB(201, 255, 255, 255),
@@ -324,8 +325,10 @@ class _Complaint_TableState extends State<Complaint_Table> {
                                 Text(
                                   _getStatusText(complaint.status),
                                   style: TextStyle(
+                                    
                                     color: _getStatusTextColor(
                                       complaint.status,
+                                      
                                     ),
                                     fontWeight: FontWeight.bold,
                                     fontSize: 12,
@@ -553,10 +556,10 @@ class _Complaint_TableState extends State<Complaint_Table> {
     switch (status) {
       case 'Pending':
         return Colors.orange.shade100;
-      case 'in_progress':
+      case 'InProgress':
         return Colors.blue.shade100;
-      case 'resolved':
-        return Colors.green.shade100;
+      case 'Resolved':
+        return const Color.fromARGB(255, 205, 231, 213);
       default:
         return Colors.grey.shade100;
     }
@@ -566,7 +569,7 @@ class _Complaint_TableState extends State<Complaint_Table> {
     switch (status) {
       case 'Pending':
         return Colors.orange;
-      case 'c':
+      case 'InProgress':
         return Colors.blue;
       case 'Resolved':
         return Colors.green;
@@ -579,12 +582,12 @@ class _Complaint_TableState extends State<Complaint_Table> {
     switch (status) {
       case 'Pending':
         return Colors.orange.shade800;
-      case 'in_progress':
+      case 'InProgress':
         return Colors.blue.shade800;
-      case 'resolved':
+      case 'Resolved':
         return Colors.green.shade800;
       default:
-        return Colors.grey.shade800;
+        return Colors.white;
     }
   }
 
@@ -592,9 +595,9 @@ class _Complaint_TableState extends State<Complaint_Table> {
     switch (status) {
       case 'Pending':
         return 'Pending';
-      case 'In_Progress':
+      case 'InProgress':
         return 'In Progress';
-      case 'resolved':
+      case 'Resolved':
         return 'Resolved';
       default:
         return 'Unknown';

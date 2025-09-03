@@ -122,20 +122,26 @@ class ViewComplaint extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Image preview with enhanced styling
+        // Complaint images section (all images with gallery)
         if (complaint.imageUrls.isNotEmpty) ...[
-          _buildImagePreview(complaint.imageUrls[0], basicAuth),
-          const SizedBox(height: 24),
+          _buildDetailCard('Complaint Images', Icons.photo_library, [
+            _buildImageGrid(complaint.imageUrls, basicAuth, 'Complaint Images'),
+          ]),
+          const SizedBox(height: 16),
         ],
 
         // Complaint details with enhanced styling
         _buildDetailCard('Complaint Information', Icons.info_outline, [
           _buildDetailRow('ID', '#${complaint.id}'),
           _buildDetailRow('Department', complaint.departmentName),
+          if (complaint.wardName != null)
+            _buildDetailRow('Ward', complaint.wardName!),
           _buildDetailRow('Location', complaint.location),
           _buildDetailRow('Status', complaint.status),
           _buildDetailRow('Submitted by', complaint.submittedBy),
           _buildDetailRow('Created', _formatDate(complaint.createdAt)),
+          if (complaint.completedAt != null)
+            _buildDetailRow('Completed', _formatDate(complaint.completedAt!)),
         ]),
         const SizedBox(height: 16),
         _buildDetailCard('Description', Icons.description, [
@@ -145,70 +151,92 @@ class ViewComplaint extends StatelessWidget {
             isDescription: true,
           ),
         ]),
+
+        // Employee updates section
+        if ((complaint.employeeRemark != null &&
+                complaint.employeeRemark!.trim().isNotEmpty) ||
+            complaint.employeeImages.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          _buildDetailCard('Employee Updates', Icons.engineering, [
+            if (complaint.employeeRemark != null &&
+                complaint.employeeRemark!.trim().isNotEmpty)
+              _buildDetailRow('Remark', complaint.employeeRemark!,
+                  isDescription: true),
+            if (complaint.employeeImages.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              _buildImageGrid(
+                  complaint.employeeImages, basicAuth, 'Employee Images'),
+            ],
+          ]),
+        ],
       ],
     );
   }
 
-  Widget _buildImagePreview(String imageUrl, String basicAuth) {
-    return Container(
-      height: 250,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withAlpha(30),
-            spreadRadius: 2,
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+  // _buildImagePreview removed (unused)
+
+  Widget _buildImageGrid(
+      List<String> imageUrls, String basicAuth, String galleryTitle) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 4,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 1,
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Image.network(
-          imageUrl,
-          headers: {'Authorization': basicAuth},
-          fit: BoxFit.cover,
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Container(
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Center(
-                child: CircularProgressIndicator(
-                  value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded /
-                            loadingProgress.expectedTotalBytes!
-                      : null,
+      itemCount: imageUrls.length,
+      itemBuilder: (context, index) {
+        final url = imageUrls[index];
+        return InkWell(
+          onTap: () => _openGallery(context, imageUrls, index, basicAuth,
+              title: galleryTitle),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.network(
+                  url,
+                  headers: {'Authorization': basicAuth},
+                  fit: BoxFit.cover,
                 ),
-              ),
-            );
-          },
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.broken_image, size: 48, color: Colors.grey),
-                    SizedBox(height: 8),
-                    Text(
-                      'Image not available',
-                      style: TextStyle(color: Colors.grey, fontSize: 16),
+                Positioned(
+                  right: 4,
+                  bottom: 4,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(6),
                     ),
-                  ],
-                ),
-              ),
-            );
-          },
+                    child: Text(
+                      '${index + 1}/${imageUrls.length}',
+                      style: const TextStyle(color: Colors.white, fontSize: 10),
+                    ),
+                  ),
+                )
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _openGallery(BuildContext context, List<String> imageUrls, int index,
+      String basicAuth, {String? title}) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => _ImageGalleryPage(
+          imageUrls: imageUrls,
+          initialIndex: index,
+          basicAuth: basicAuth,
+          title: title,
         ),
+        fullscreenDialog: true,
       ),
     );
   }
@@ -433,5 +461,104 @@ class ViewComplaint extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year} at ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+  }
+}
+
+class _ImageGalleryPage extends StatefulWidget {
+  final List<String> imageUrls;
+  final int initialIndex;
+  final String basicAuth;
+  final String? title;
+
+  const _ImageGalleryPage({
+    Key? key,
+    required this.imageUrls,
+    required this.initialIndex,
+    required this.basicAuth,
+    this.title,
+  }) : super(key: key);
+
+  @override
+  State<_ImageGalleryPage> createState() => _ImageGalleryPageState();
+}
+
+class _ImageGalleryPageState extends State<_ImageGalleryPage> {
+  late final PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        title: Text(widget.title ?? 'Gallery'),
+      ),
+      body: Stack(
+        children: [
+          PageView.builder(
+            controller: _pageController,
+            onPageChanged: (i) => setState(() => _currentIndex = i),
+            itemCount: widget.imageUrls.length,
+            itemBuilder: (context, index) {
+              final url = widget.imageUrls[index];
+              return Center(
+                child: InteractiveViewer(
+                  minScale: 0.5,
+                  maxScale: 5.0,
+                  child: Image.network(
+                    url,
+                    headers: {'Authorization': widget.basicAuth},
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(Icons.broken_image, size: 64, color: Colors.white70),
+                        SizedBox(height: 8),
+                        Text('Failed to load image',
+                            style: TextStyle(color: Colors.white70)),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          Positioned(
+            bottom: 16,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${_currentIndex + 1} / ${widget.imageUrls.length}',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

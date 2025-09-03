@@ -30,4 +30,28 @@ class DepartmentService {
       throw Exception('Failed to load departments');
     }
   }
+
+  static Future<Department> createDepartment({required String name}) async {
+    final uri = Uri.parse('$baseUrl/departments');
+    final payload = jsonEncode({
+      'name': name,
+    });
+
+    _logger.i('Creating department with payload: $payload');
+    final response = await http.post(
+      uri,
+      headers: getAuthHeaders(),
+      body: payload,
+    );
+
+    _logger.d('Create Department - Status: ${response.statusCode}');
+    _logger.d('Create Department - Body: ${response.body}');
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return Department.fromJson(data);
+    }
+
+    throw Exception('Failed to create department: HTTP ${response.statusCode}');
+  }
 }

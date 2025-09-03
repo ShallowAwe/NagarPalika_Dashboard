@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_nagarpalika_dashboard/model/department_model.dart';
 import 'package:smart_nagarpalika_dashboard/providers/department_provider.dart';
-import 'package:smart_nagarpalika_dashboard/utils/summaryCards.dart';
 import 'package:smart_nagarpalika_dashboard/widgets/quickaction_cards.dart';
+import 'package:smart_nagarpalika_dashboard/widgets/add_department.dart';
 
 class DepartmentPage extends ConsumerStatefulWidget {
   const DepartmentPage({super.key});
@@ -13,63 +13,18 @@ class DepartmentPage extends ConsumerStatefulWidget {
 }
 
 class _DepartmentPageState extends ConsumerState<DepartmentPage> {
-  final ScrollController _scrollController = ScrollController();
-  bool _showLeftArrow = false;
-  bool _showRightArrow = true;
+  bool _isDepartmentsExpanded = false;
 
   void _refreshDepartments() {
-    setState(() {});
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_onScroll);
-  }
-
-  @override
-  void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _onScroll() {
-    if (!mounted || !_scrollController.hasClients) return;
-
     setState(() {
-      _showLeftArrow = _scrollController.offset > 0;
-      _showRightArrow =
-          _scrollController.offset < _scrollController.position.maxScrollExtent;
+      ref.read(departmentProvider.notifier).refresh();
     });
   }
 
-  void _scrollLeft() {
-    if (!_scrollController.hasClients) return;
-
-    final newOffset = (_scrollController.offset - 200).clamp(
-      0.0,
-      _scrollController.position.maxScrollExtent,
-    );
-    _scrollController.animateTo(
-      newOffset,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
-  }
-
-  void _scrollRight() {
-    if (!_scrollController.hasClients) return;
-
-    final newOffset = (_scrollController.offset + 200).clamp(
-      0.0,
-      _scrollController.position.maxScrollExtent,
-    );
-    _scrollController.animateTo(
-      newOffset,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+  void _toggleDepartmentsExpansion() {
+    setState(() {
+      _isDepartmentsExpanded = !_isDepartmentsExpanded;
+    });
   }
 
   @override
@@ -84,7 +39,7 @@ class _DepartmentPageState extends ConsumerState<DepartmentPage> {
       }
     });
 
-    // action cards
+    // Quick action cards
     Widget actionCard = Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       height: 220,
@@ -122,27 +77,22 @@ class _DepartmentPageState extends ConsumerState<DepartmentPage> {
                   title: 'Create Department',
                   subtitle: 'Create a new department',
                   color: Colors.blue,
-                  onTap: () {},
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: buildQuickActionCard(
-                  icon: Icons.add_alert_sharp,
-                  title: 'Alerts',
-                  subtitle: 'View all alerts',
-                  color: Colors.green,
-                  onTap: () {},
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AddDepartment(),
+                    );
+                  },
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: buildQuickActionCard(
                   icon: Icons.add_location_alt_outlined,
-                  title: 'Local Bodies',
-                  subtitle: 'View all local bodies',
+                  title: 'Total Departments',
+                  subtitle: 'View all departments',
                   color: Colors.orange,
-                  onTap: () {},
+                  onTap: _toggleDepartmentsExpansion,
                 ),
               ),
             ],
@@ -150,12 +100,12 @@ class _DepartmentPageState extends ConsumerState<DepartmentPage> {
         ],
       ),
     );
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: Focus(
         autofocus: false,
         onKeyEvent: (node, event) {
-          // Handle keyboard events properly to prevent conflicts
           return KeyEventResult.handled;
         },
         child: SingleChildScrollView(
@@ -164,21 +114,102 @@ class _DepartmentPageState extends ConsumerState<DepartmentPage> {
             children: [
               _buildHeader(),
               const SizedBox(height: 24),
-              _buildScrollControls(),
-              const SizedBox(height: 12),
-              _buildScrollableCards(departmentsList),
-              if (departmentsList.isNotEmpty) ...[
-                Padding(
-                  padding: const EdgeInsets.only(top: 12.0),
-                  child: _buildScrollIndicator(departmentsList.length),
-                ),
-              ],
-              // yet to decide on this part .//./././/.////./
               const SizedBox(height: 20),
-              // action cards (create department ), alerts (complaints)
               Padding(
-                padding: const EdgeInsets.only(left: 16.0, right: 16.0),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: actionCard,
+              ),
+              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withAlpha(25),
+                        spreadRadius: 1,
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            InkWell(
+                              onTap: _toggleDepartmentsExpansion,
+                              child: Text(
+                                'Departments (${departmentsList.length})',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: _refreshDepartments,
+                              icon: Icon(Icons.refresh_rounded,
+                                  color: Colors.blue.shade700),
+                              tooltip: 'Refresh',
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        if (departments.isLoading)
+                          const Center(child: CircularProgressIndicator())
+                        else if (departments.hasError)
+                          Text('Failed to load departments',
+                              style: TextStyle(color: Colors.red.shade700))
+                        else if (departmentsList.isEmpty)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(vertical: 40),
+                              child: Text('No departments found',
+                                  style: TextStyle(color: Colors.grey)),
+                            ),
+                          )
+                        else
+                          AnimatedCrossFade(
+                            firstChild: const SizedBox.shrink(),
+                            secondChild: ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: departmentsList.length,
+                              separatorBuilder: (_, __) => Divider(
+                                height: 1,
+                                color: Colors.grey.shade200,
+                              ),
+                              itemBuilder: (context, index) {
+                                final d = departmentsList[index];
+                                return ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundColor: Colors.blue.shade50,
+                                    child: Icon(Icons.business,
+                                        color: Colors.blue.shade700),
+                                  ),
+                                  title: Text(d.name),
+                                  subtitle: Text('ID: ${d.id}'),
+                                );
+                              },
+                            ),
+                            crossFadeState: _isDepartmentsExpanded
+                                ? CrossFadeState.showSecond
+                                : CrossFadeState.showFirst,
+                            duration: const Duration(milliseconds: 300),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -266,158 +297,4 @@ class _DepartmentPageState extends ConsumerState<DepartmentPage> {
       ),
     );
   }
-
-  Widget _buildScrollControls() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Row(
-        children: [
-          Text(
-            'Departments',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey.shade800,
-            ),
-          ),
-          const Spacer(),
-          Row(
-            children: [
-              _buildScrollButton(
-                isVisible: _showLeftArrow,
-                onPressed: _showLeftArrow ? _scrollLeft : null,
-                icon: Icons.arrow_back_ios,
-                tooltip: 'Scroll Left',
-              ),
-              const SizedBox(width: 8),
-              _buildScrollButton(
-                isVisible: _showRightArrow,
-                onPressed: _showRightArrow ? _scrollRight : null,
-                icon: Icons.arrow_forward_ios,
-                tooltip: 'Scroll Right',
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildScrollButton({
-    required bool isVisible,
-    required VoidCallback? onPressed,
-    required IconData icon,
-    required String tooltip,
-  }) {
-    return AnimatedOpacity(
-      opacity: isVisible ? 1.0 : 0.3,
-      duration: const Duration(milliseconds: 200),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withAlpha(30),
-              spreadRadius: 1,
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: IconButton(
-          onPressed: onPressed,
-          icon: Icon(icon, size: 16),
-          color: Colors.blue.shade700,
-          tooltip: tooltip,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildScrollableCards(List<Department> departmentsList) {
-    return SizedBox(
-      height: 120,
-      child: RawScrollbar(
-        controller: _scrollController,
-
-        // thumbColor: Colors.blue.shade300,
-        // trackColor: Colors.grey.shade200,
-        // trackBorderColor: Colors.grey.shade300,
-        radius: const Radius.circular(8),
-        thickness: 6,
-        child: SingleChildScrollView(
-          controller: _scrollController,
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: _buildDepartmentCards(departmentsList),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildScrollIndicator(int totalDepartments) {
-    if (totalDepartments <= 3) return const SizedBox.shrink();
-
-    return AnimatedBuilder(
-      animation: _scrollController,
-      builder: (context, child) {
-        double scrollProgress = 0.0;
-
-        // null safety checks
-        if (_scrollController.hasClients &&
-            _scrollController.position.hasContentDimensions &&
-            _scrollController.position.maxScrollExtent > 0 &&
-            _scrollController.position.maxScrollExtent.isFinite) {
-          scrollProgress =
-              (_scrollController.offset /
-                      _scrollController.position.maxScrollExtent)
-                  .clamp(0.0, 1.0);
-        }
-
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 100,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
-              ),
-              child: FractionallySizedBox(
-                alignment: Alignment.centerLeft,
-                widthFactor: 0.3,
-                child: Transform.translate(
-                  offset: Offset(scrollProgress * 70, 0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade500,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-Widget _buildDepartmentCards(List<Department> departments) {
-  return Row(
-    children: departments.map((department) {
-      return Container(
-        margin: const EdgeInsets.only(right: 16),
-        child: SummaryCard(
-          title: department.name,
-          subtitle: '${department.name.length}',
-          icon: Icons.business,
-          iconBgColor: Colors.blue.shade100,
-        ),
-      );
-    }).toList(),
-  );
 }

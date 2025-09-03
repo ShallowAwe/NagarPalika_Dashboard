@@ -9,7 +9,12 @@ import 'package:smart_nagarpalika_dashboard/screens/overviewpage.dart';
 import 'package:smart_nagarpalika_dashboard/screens/user_management_page.dart';
 import 'package:smart_nagarpalika_dashboard/utils/sideBar.dart';
 
-void main() {
+
+
+import 'package:smart_nagarpalika_dashboard/screens/alerts_page.dart';
+import 'package:smart_nagarpalika_dashboard/screens/locations_page.dart';
+  
+void  main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(ProviderScope(child: AdminDashboardApp()));
 }
@@ -96,7 +101,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
       case 4:
         return DepartmentPage();
       case 5:
-        return Center(child: Text("Alerts"));
+        return AlertsPage();
+      case 6:
+        return LocationsPage();
       default:
         return Center(child: Text("Select a tab"));
     }

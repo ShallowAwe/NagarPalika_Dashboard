@@ -14,6 +14,23 @@ class DepartmentNotifier extends AsyncNotifier<List<Department>> {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() => DepartmentService.fetchDepartments());
   }
+
+  Future<void> create(String name) async {
+    final previous = state;
+    state = const AsyncLoading();
+    try {
+      final created = await DepartmentService.createDepartment(name: name);
+      final current = await DepartmentService.fetchDepartments();
+      // Prefer server as source of truth; fall back to append
+      state = AsyncData(current.isNotEmpty ? current : [
+        ...?previous.valueOrNull,
+        created,
+      ]);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
 }
 
 final departmentProvider =

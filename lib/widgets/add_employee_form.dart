@@ -1,33 +1,45 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
+import 'package:multi_dropdown/multi_dropdown.dart';
+import 'package:smart_nagarpalika_dashboard/model/department_model.dart';
+import 'package:smart_nagarpalika_dashboard/model/wards_model.dart';
+import 'package:smart_nagarpalika_dashboard/providers/department_provider.dart';
+import 'package:smart_nagarpalika_dashboard/providers/wards_provider.dart';
 
-class AddEmployeeForm extends StatefulWidget {
+class AddEmployeeForm extends ConsumerStatefulWidget {
   const AddEmployeeForm({super.key});
 
   @override
-  State<AddEmployeeForm> createState() => _AddEmployeeFormState();
+  ConsumerState<AddEmployeeForm> createState() => _AddEmployeeFormState();
 }
 
-class _AddEmployeeFormState extends State<AddEmployeeForm> {
+class _AddEmployeeFormState extends ConsumerState<AddEmployeeForm> {
   final Logger _logger = Logger();
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
-  final TextEditingController _wardsController = TextEditingController();
-  final TextEditingController _contactInfoController = TextEditingController();
-  final TextEditingController _assignedComplaintsController =
-      TextEditingController();
 
+  // Fixed: Use MultiSelectController properly
+  final MultiSelectController<Wards> _wardsController = MultiSelectController<Wards>();
+  final TextEditingController _contactInfoController = TextEditingController();
+  final TextEditingController _assignedComplaintsController = TextEditingController();
+  final TextEditingController _positionController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  
   String? _selectedDepartmentCode;
-  List<Map<String, dynamic>> _departments = [];
+  // Fixed: Use List<Wards> instead of String for selected wards
+  List<Wards> _selectedWards = [];
+  bool passwordVisible = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchDepartments();
+    passwordVisible = true;
   }
 
   @override
@@ -37,11 +49,25 @@ class _AddEmployeeFormState extends State<AddEmployeeForm> {
     _wardsController.dispose();
     _contactInfoController.dispose();
     _assignedComplaintsController.dispose();
+    _positionController.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
     super.dispose();
+  }
+
+  // Custom validation for MultiDropdown
+  String? _validateWards() {
+    if (_selectedWards.isEmpty) {
+      return 'Please select at least one ward';
+    }
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
+    final _departments = ref.watch(departmentProvider);
+    final _wards = ref.watch(wardProvider);
+      
     return Center(
       child: Card(
         elevation: 16,
@@ -49,7 +75,7 @@ class _AddEmployeeFormState extends State<AddEmployeeForm> {
         shadowColor: Colors.blueAccent.withAlpha(21),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         child: Container(
-          width: 500,
+          width: 650,
           padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 32),
           child: Stack(
             children: [
@@ -145,136 +171,272 @@ class _AddEmployeeFormState extends State<AddEmployeeForm> {
                           ],
                         ),
                         const SizedBox(height: 18),
-                        DropdownButtonFormField<String>(
-                          value: _selectedDepartmentCode,
-                          decoration: InputDecoration(
-                            labelText: 'Department',
-                            prefixIcon: const Icon(Icons.business),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            filled: true,
-                            fillColor: Colors.white,
-                          ),
-                          items: _departments
-                              .map(
-                                (dept) => DropdownMenuItem<String>(
-                                  value: dept['code'] as String,
-                                  child: Text(
-                                    dept['displayName'] ?? dept['code'],
-                                  ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _departments.when(
+                                data: (list) {
+                                  return DropdownButtonFormField<String>(
+                                    value: _selectedDepartmentCode,
+                                    decoration: InputDecoration(
+                                      labelText: 'Department',
+                                      prefixIcon: const Icon(Icons.business),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      filled: true,
+                                      fillColor: Colors.white,
+                                      contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 16,
+                                      ),
+                                    ),
+                                    isExpanded: true,
+                                    items: list.map((dept) {
+                                      return DropdownMenuItem<String>(
+                                        value: dept.id.toString(),
+                                        child: Text(
+                                          dept.name,
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 1,
+                                        ),
+                                      );
+                                    }).toList(),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _selectedDepartmentCode = value;
+                                      });
+                                    },
+                                    validator: (value) =>
+                                        value == null || value.isEmpty
+                                        ? 'Select department'
+                                        : null,
+                                  );
+                                },
+                                loading: () => const Center(
+                                  child: CircularProgressIndicator(),
                                 ),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedDepartmentCode = value;
-                            });
-                          },
-                          validator: (value) => value == null || value.isEmpty
-                              ? 'Select department'
-                              : null,
+                                error: (e, st) => Text('Error: $e'),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            // Fixed MultiDropdown implementation
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _wards.when(
+                                    data: (list) {
+                                      return MultiDropdown<Wards>(
+                                        fieldDecoration: FieldDecoration(
+                                          labelText: 'Select Wards',
+                                          prefixIcon: const Icon(Icons.location_on),
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(16),
+                                          ),
+                                      backgroundColor: Colors.white
+                                        ),
+                                        dropdownDecoration: const DropdownDecoration(
+                                          elevation: 5,
+                                          maxHeight: 300,
+                                        ),
+                                        items: list
+                                            .map((ward) => DropdownItem<Wards>(
+                                                  value: ward,
+                                                  label: ward.name,
+                                                ))
+                                            .toList(),
+                                        controller: _wardsController,
+                                        enabled: true,
+                                        searchEnabled: true,
+                                        chipDecoration: ChipDecoration(
+                                          backgroundColor: Colors.amber.shade100,
+                                          wrap: true,
+                                          runSpacing: 4,
+                                          spacing: 8,
+                                          deleteIcon: const Icon(Icons.close, size: 18),
+                                          labelStyle: const TextStyle(fontSize: 12),
+                                        ),
+                                        onSelectionChange: (selectedItems) {
+                                          setState(() {
+                                            _selectedWards = selectedItems;
+                                          });
+                                        },
+                                     
+                                      );
+                                    },
+                                    loading: () => const Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                    error: (error, stackTrace) => Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.shade50,
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: Colors.red.shade200),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.error_outline, color: Colors.red.shade700),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              'Error loading wards: $error',
+                                              style: TextStyle(color: Colors.red.shade700),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  // Custom validation message for MultiDropdown
+                                  if (_validateWards() != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 12, top: 5),
+                                      child: Text(
+                                        _validateWards()!,
+                                        style: TextStyle(
+                                          color: Theme.of(context).colorScheme.error,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 18),
                         Row(
                           children: [
                             Expanded(
                               child: TextFormField(
-                                controller: _wardsController,
+                                controller: _usernameController,
                                 decoration: InputDecoration(
-                                  labelText: 'Wards',
-                                  prefixIcon: const Icon(Icons.map),
+                                  labelText: 'Username',
+                                  prefixIcon: const Icon(Icons.account_circle),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                   filled: true,
                                   fillColor: Colors.white,
-                                  helperText:
-                                      'Comma-separated (e.g. Ward 1, Ward 2)',
+                                  helperText: "Enter username",
                                 ),
+                                validator: (value) =>
+                                    value == null || value.isEmpty
+                                    ? 'Enter username'
+                                    : null,
                               ),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
                               child: TextFormField(
-                                controller: _contactInfoController,
+                                obscureText: passwordVisible,
+                                controller: _passwordController,
                                 decoration: InputDecoration(
-                                  labelText: 'Contact Info',
+                                  suffixIcon: IconButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        passwordVisible = !passwordVisible;
+                                      });
+                                    },
+                                    icon: Icon(passwordVisible
+                                        ? Icons.visibility
+                                        : Icons.visibility_off),
+                                  ),
+                                  labelText: 'Password',
+                                  prefixIcon: const Icon(Icons.lock_outline),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  helperText: "Enter password",
+                                ),
+                                validator: (value) =>
+                                    value == null || value.isEmpty
+                                    ? 'Enter password'
+                                    : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: _contactInfoController,
+                                keyboardType: TextInputType.phone,
+                                decoration: InputDecoration(
+                                  labelText: 'Mobile No.',
                                   prefixIcon: const Icon(Icons.phone),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                   filled: true,
                                   fillColor: Colors.white,
-                                  helperText: 'Phone or email',
+                                  helperText: 'Phone Number',
                                 ),
+                                validator: (value) =>
+                                    value == null || value.isEmpty
+                                    ? 'Enter mobile number'
+                                    : null,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _positionController,
+                                decoration: InputDecoration(
+                                  labelText: "Position",
+                                  prefixIcon: const Icon(Icons.work_outline_rounded),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  helperText: "Work Position",
+                                ),
+                                validator: (value) =>
+                                    value == null || value.isEmpty
+                                    ? 'Enter position'
+                                    : null,
                               ),
                             ),
                           ],
                         ),
-                        // const SizedBox(height: 18),
-                        // TextFormField(
-                        //   controller: _assignedComplaintsController,
-                        //   decoration: InputDecoration(
-                        //     labelText: 'Assigned Complaints',
-                        //     prefixIcon: const Icon(Icons.assignment),
-                        //     border: OutlineInputBorder(
-                        //       borderRadius: BorderRadius.circular(16),
-                        //     ),
-                        //     filled: true,
-                        //     fillColor: Colors.white,
-                        //     helperText: 'Comma-separated complaint IDs',
-                        //   ),
-                        // ),
                         const SizedBox(height: 32),
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(
                             icon: const Icon(Icons.save),
-                            style:
-                                ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF397DE1),
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 18,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(18),
-                                  ),
-                                  elevation: 4,
-                                  shadowColor: Colors.blueAccent.withAlpha(
-                                    21, // 21 is the alpha value for 0.18
-                                  ),
-                                  textStyle: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ).copyWith(
-                                  overlayColor:
-                                      WidgetStateProperty.resolveWith<Color?>((
-                                        states,
-                                      ) {
-                                        if (states.contains(
-                                          WidgetState.pressed,
-                                        )) {
-                                          return Colors.blueAccent.withAlpha(
-                                            18,
-                                          );
-                                        }
-                                        if (states.contains(
-                                          WidgetState.hovered,
-                                        )) {
-                                          return Colors.blueAccent.withAlpha(
-                                            21, // 21 is the alpha value for 0.18
-                                          );
-                                        }
-                                        return null;
-                                      }),
-                                ),
-                            onPressed: () {
-                              _createEmployee();
-                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF397DE1),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 18),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              elevation: 4,
+                              shadowColor: Colors.blueAccent.withAlpha(21),
+                              textStyle: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ).copyWith(
+                              overlayColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                                if (states.contains(WidgetState.pressed)) {
+                                  return Colors.blueAccent.withAlpha(18);
+                                }
+                                if (states.contains(WidgetState.hovered)) {
+                                  return Colors.blueAccent.withAlpha(21);
+                                }
+                                return null;
+                              }),
+                            ),
+                            onPressed: _createEmployee,
                             label: const Text('Create Employee'),
                           ),
                         ),
@@ -290,85 +452,68 @@ class _AddEmployeeFormState extends State<AddEmployeeForm> {
     );
   }
 
-  Future<void> _fetchDepartments() async {
-    final username = 'admin';
-    final password = 'admin';
-    try {
-      final basicAuth =
-          'Basic ' + base64Encode(utf8.encode('$username:$password'));
-      final response = await http.get(
-        Uri.parse('http://localhost:8080/admin/departments'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': basicAuth,
-        },
-      );
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        setState(() {
-          _departments = data
-              .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
-              .toList();
-          if (_departments.isNotEmpty) {
-            _selectedDepartmentCode = _departments.first['code'];
-          }
-        });
-      } else {
-        _logger.e(
-          'Failed to fetch departments: Status: ${response.statusCode}, Body: ${response.body}',
-        );
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to fetch departments: Status \\${response.statusCode}',
-            ),
-          ),
-        );
-      }
-    } catch (e, stack) {
-      _logger.e(
-        'Exception in _fetchDepartments: Error: ${e.toString()}, Stack: ${stack.toString()}',
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error fetching departments: \\${e.toString()}'),
-        ),
-      );
-    }
-  }
-
   Future<void> _createEmployee() async {
-    final username = 'admin';
-    final password = 'admin';
-    try {
-      final basicAuth =
-          'Basic ' + base64Encode(utf8.encode('$username:$password'));
-      _logger.d(
-        'Auth header: Basic ' +
-            base64Encode(utf8.encode('$username:$password')),
+    // Validate form and custom MultiDropdown
+    if (!_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill all required fields')),
       );
+      return;
+    }
+
+    // Custom validation for MultiDropdown
+    if (_validateWards() != null) {
+      setState(() {}); // Trigger rebuild to show validation message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select at least one ward')),
+      );
+      return;
+    }
+
+    const username = 'admin';
+    const password = 'admin';
+    
+    try {
+      final basicAuth = 'Basic ${base64Encode(utf8.encode('$username:$password'))}';
+      
+      // Fixed payload construction
+      final payload = {
+        'firstName': _firstNameController.text.trim(),
+        'lastName': _lastNameController.text.trim(),
+        'phoneNumber': _contactInfoController.text.trim(),
+        'departmentId': int.tryParse(_selectedDepartmentCode ?? ''),
+        'wardsId': _selectedWards.map((ward) => ward.id).toList(), // Fixed: Extract IDs from Ward objects
+        'username': _usernameController.text.trim(),
+        'password': _passwordController.text.trim(),
+        'position': _positionController.text.trim(), // Fixed typo: 'postion' -> 'position'
+      };
+
+      _logger.d('Sending payload: ${jsonEncode(payload)}');
+      
       final response = await http.post(
         Uri.parse('http://localhost:8080/admin/create'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': basicAuth,
         },
-        body: jsonEncode({
-          'firstname': _firstNameController.text,
-          'lastname': _lastNameController.text,
-          'mobile': _contactInfoController.text,
-          'department': _selectedDepartmentCode,
-        }),
+        body: jsonEncode(payload),
       );
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Employee created successfully')),
-        );
-        Navigator.of(context).pop();
+      
+      _logger.d('Response status: ${response.statusCode}');
+      _logger.d('Response body: ${response.body}');
+      
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Employee created successfully')),
+          );
+          Navigator.of(context).pop();
+        }
       } else {
         _logger.e(
           'Failed to create employee: Status: ${response.statusCode}, Body: ${response.body}',
         );
+        
         String errorMsg = 'Failed to create employee';
         try {
           final errorJson = jsonDecode(response.body);
@@ -378,19 +523,24 @@ class _AddEmployeeFormState extends State<AddEmployeeForm> {
             errorMsg = response.body;
           }
         } catch (_) {
-          errorMsg = response.body;
+          errorMsg = 'Server error: ${response.statusCode}';
         }
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed: \\${errorMsg}')));
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed: $errorMsg')),
+          );
+        }
       }
     } catch (e, stack) {
       _logger.e(
         'Exception in _createEmployee: Error: ${e.toString()}, Stack: ${stack.toString()}',
       );
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error creating employee: \\${e.toString()}')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error creating employee: ${e.toString()}')),
+        );
+      }
     }
   }
 }
