@@ -103,7 +103,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       case 5:
         return AlertsPage();
       case 6:
-        return LocationsPage();
+        return LocationPage();
       default:
         return Center(child: Text("Select a tab"));
     }
